@@ -26,7 +26,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
     if(!files?.length)return;setUploading(true);setError("");const supabase=createClient();const {data:{user}}=await supabase.auth.getUser();if(!user){router.push("/login");return}
     const urls:string[]=[];
     for(const file of Array.from(files).slice(0,6)){const bitmap=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d")?.drawImage(bitmap,0,0,canvas.width,canvas.height);const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",.82));if(!blob)continue;const path=`${user.id}/${crypto.randomUUID()}.webp`;const {error:uploadError}=await supabase.storage.from("wedding-media").upload(path,blob,{contentType:"image/webp"});if(uploadError){setError(uploadError.message);continue}urls.push(supabase.storage.from("wedding-media").getPublicUrl(path).data.publicUrl)}
-    setUploading(false);if(urls.length){set("coverUrl",data.coverUrl||urls[0]);set("galleryUrls",[...(data.galleryUrls??[]),...urls].slice(0,6))}
+    setUploading(false);if(urls.length){set("coverUrl",urls[0]);set("galleryUrls",[...urls,...(data.galleryUrls??[])].slice(0,6))}
   }
   const save = async () => {
     setBusy(true); setError("");
@@ -71,13 +71,13 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
         <section className="px-5 py-8 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-2xl">
             <div className="mb-8 flex gap-6 border-b border-[#dedbd5] text-sm">
-              <button className="border-b-2 border-[#8f654b] pb-3 font-semibold text-[#76513b]">Asosiy ma’lumotlar</button>
-              <button className="pb-3 text-[#88827c]">Mehmonlar <span className="ml-1 rounded-full bg-[#e5e2dd] px-2 py-0.5 text-xs">{data.guests}</span></button>
-              <button className="pb-3 text-[#88827c]">Dizayn</button>
+              <a href="#main-details" className="border-b-2 border-[#8f654b] pb-3 font-semibold text-[#76513b]">Asosiy ma’lumotlar</a>
+              <Link href="/admin/guests" className="pb-3 text-[#88827c]">Mehmonlar <span className="ml-1 rounded-full bg-[#e5e2dd] px-2 py-0.5 text-xs">{data.guests}</span></Link>
+              <a href="#design" className="pb-3 text-[#88827c]">Dizayn</a>
             </div>
             <div className="space-y-8">
               {error && <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-              <FormSection title="Juftlik" subtitle="Taklifnomada ko‘rinadigan ismlar">
+              <FormSection id="main-details" title="Juftlik" subtitle="Taklifnomada ko‘rinadigan ismlar">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Kuyovning ismi" value={data.partnerOne} onChange={(v) => set("partnerOne", v)} placeholder="Aziz" />
                   <Field label="Kelinning ismi" value={data.partnerTwo} onChange={(v) => set("partnerTwo", v)} placeholder="Diyora" />
@@ -104,7 +104,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
                 <Field label="Karta raqami" value={data.cardNumber ?? ""} onChange={(v) => set("cardNumber", v.replace(/[^\d ]/g, "").slice(0, 23))} placeholder="8600 0000 0000 0000" />
                 <Field label="Karta egasi" value={data.cardHolder ?? ""} onChange={(v) => set("cardHolder", v)} placeholder="A. ABDULLAYEV" />
               </FormSection>
-              <FormSection title="Dizayn va media" subtitle="Rasm va musiqa havolalari ixtiyoriy">
+              <FormSection id="design" title="Dizayn va media" subtitle="Rasm va musiqa havolalari ixtiyoriy">
                 <label className="block"><span className="mb-2 block text-sm font-medium">Uslub</span><select value={data.themeStyle ?? "classic"} onChange={(e)=>set("themeStyle",e.target.value)} className="w-full rounded-xl border bg-white px-4 py-3"><option value="classic">Classic</option><option value="garden">Garden</option><option value="midnight">Midnight</option></select></label>
                 <Field label="Muqova rasmi URL" value={data.coverUrl ?? ""} onChange={(v)=>set("coverUrl",v)} placeholder="https://..." />
                 <label className="block"><span className="mb-2 block text-sm font-medium">Rasmlarni yuklash (6 tagacha)</span><input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e)=>void uploadImages(e.target.files)} className="w-full rounded-xl border bg-white px-4 py-3 text-sm"/><span className="mt-2 block text-xs text-[#8d8881]">{uploading?"Siqilmoqda va yuklanmoqda…":"Rasmlar avtomatik WebP formatiga siqiladi."}</span></label>
@@ -127,7 +127,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
         <aside className="sticky top-[73px] hidden h-[calc(100vh-73px)] place-items-center overflow-hidden bg-[#ded8cf] p-8 lg:grid">
           <div className="absolute right-8 top-6 flex items-center gap-2 rounded-full bg-white/75 px-3 py-1.5 text-xs text-[#6f6962]"><Smartphone size={13} /> Jonli ko‘rinish</div>
           <div className="w-[330px] rounded-[2.8rem] border-[8px] border-[#262522] bg-white p-2 shadow-[0_35px_90px_rgba(50,42,35,.28)]">
-            <div className="invitation-pattern relative flex aspect-[9/16] flex-col items-center justify-between overflow-hidden rounded-[2rem] px-6 py-10 text-center">
+            <div style={data.coverUrl?.startsWith("http")?{backgroundImage:`linear-gradient(rgba(255,255,255,.78),rgba(255,255,255,.78)),url("${data.coverUrl}")`,backgroundSize:"cover",backgroundPosition:"center"}:undefined} className={`relative flex aspect-[9/16] flex-col items-center justify-between overflow-hidden rounded-[2rem] px-6 py-10 text-center ${data.themeStyle==="midnight"?"bg-[#171815] text-white":data.themeStyle==="garden"?"bg-gradient-to-br from-[#edf4e8] via-[#fbf8f3] to-[#dce9d7]":"invitation-pattern"}`}>
               <div className="absolute top-3 h-5 w-20 rounded-full bg-[#262522]" />
               <p className="mt-4 text-[9px] uppercase tracking-[.24em] text-[#896d59]">Nikoh oqshomi</p>
               <div><p className="mb-4 font-serif text-sm italic text-[#9d7358]">Birga bo‘lishga va’da berdik</p><p className="font-serif text-5xl leading-[.8]">{data.partnerOne || "Aziz"}<span className="my-3 block text-xl italic text-[#9d7358]">&</span>{data.partnerTwo || "Diyora"}</p></div>
@@ -140,8 +140,8 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
   );
 }
 
-function FormSection({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
-  return <section className="rounded-2xl border border-[#e2dfd9] bg-white p-5 sm:p-6"><h2 className="font-semibold">{title}</h2><p className="mt-1 text-xs text-[#8d8881]">{subtitle}</p><div className="mt-6 space-y-4">{children}</div></section>;
+function FormSection({ id, title, subtitle, children }: { id?: string; title: string; subtitle: string; children: React.ReactNode }) {
+  return <section id={id} className="scroll-mt-28 rounded-2xl border border-[#e2dfd9] bg-white p-5 sm:p-6"><h2 className="font-semibold">{title}</h2><p className="mt-1 text-xs text-[#8d8881]">{subtitle}</p><div className="mt-6 space-y-4">{children}</div></section>;
 }
 
 function Field({ label, value, onChange, placeholder, prefix, type = "text" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; prefix?: string; type?: string }) {

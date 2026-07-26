@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 
 const emptyInvitation: Invitation = {
   id: "", slug: "", partnerOne: "", partnerTwo: "", date: "2026-12-12", time: "18:00",
-  venue: "", address: "", mapUrl: "", message: "Hayotimizning eng go‘zal kunini siz bilan birga nishonlash biz uchun katta baxt.",
+  venue: "", address: "", mapUrl: "", messageUz: "", messageRu: "", messageEn: "", defaultLanguage: "uz",
   status: "draft", guests: 0, attending: 0,
 };
 
@@ -28,7 +28,9 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
     const payload = {
       owner_id: user.id, slug: data.slug, partner_one: data.partnerOne, partner_two: data.partnerTwo,
       event_date: data.date, event_time: data.time, venue: data.venue, address: data.address,
-      map_url: data.mapUrl, message: data.message, status: data.status,
+      map_url: data.mapUrl, message: data.messageUz || data.messageRu || data.messageEn,
+      message_uz: data.messageUz || null, message_ru: data.messageRu || null, message_en: data.messageEn || null,
+      default_language: data.defaultLanguage, created_by_email: user.email, status: data.status,
     };
     const result = initial
       ? await supabase.from("invitations").update(payload).eq("id", initial.id)
@@ -69,7 +71,13 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
                   <Field label="Kelinning ismi" value={data.partnerTwo} onChange={(v) => set("partnerTwo", v)} placeholder="Diyora" />
                 </div>
                 <Field label="Havola nomi" value={data.slug} onChange={(v) => set("slug", v.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} placeholder="aziz-diyora" prefix="taklif.uz/i/" />
-                <label className="block"><span className="mb-2 block text-sm font-medium">Taklif matni</span><textarea value={data.message} onChange={(e) => set("message", e.target.value)} rows={3} className="w-full resize-none rounded-xl border border-[#dcd8d1] bg-white px-4 py-3 text-sm outline-none focus:border-[#9a745a]" /></label>
+                <label className="block"><span className="mb-2 block text-sm font-medium">Taklifnomaning asosiy tili</span><select value={data.defaultLanguage} onChange={(e) => set("defaultLanguage", e.target.value)} className="w-full rounded-xl border border-[#dcd8d1] bg-white px-4 py-3 text-sm outline-none focus:border-[#9a745a]"><option value="uz">O‘zbekcha</option><option value="ru">Русский</option><option value="en">English</option></select><span className="mt-2 block text-xs text-[#8d8881]">Mehmon havolani ochganda shu til birinchi ko‘rinadi.</span></label>
+                <div className="grid gap-4">
+                  <MessageField label="Taklif matni — O‘zbekcha" value={data.messageUz} onChange={(v) => set("messageUz", v)} placeholder="Hayotimizning eng go‘zal kunini siz bilan..." />
+                  <MessageField label="Текст приглашения — Русский" value={data.messageRu} onChange={(v) => set("messageRu", v)} placeholder="Будем счастливы разделить этот день с вами..." />
+                  <MessageField label="Invitation text — English" value={data.messageEn} onChange={(v) => set("messageEn", v)} placeholder="We would be delighted to celebrate with you..." />
+                  <p className="text-xs leading-5 text-[#8d8881]">Faqat bittasini kiritsangiz ham bo‘ladi — u qolgan tillar uchun standart matn sifatida ishlatiladi.</p>
+                </div>
               </FormSection>
               <FormSection title="Sana va joy" subtitle="Mehmonlar uchun muhim tafsilotlar">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -97,7 +105,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
               <div className="absolute top-3 h-5 w-20 rounded-full bg-[#262522]" />
               <p className="mt-4 text-[9px] uppercase tracking-[.24em] text-[#896d59]">Nikoh oqshomi</p>
               <div><p className="mb-4 font-serif text-sm italic text-[#9d7358]">Birga bo‘lishga va’da berdik</p><p className="font-serif text-5xl leading-[.8]">{data.partnerOne || "Aziz"}<span className="my-3 block text-xl italic text-[#9d7358]">&</span>{data.partnerTwo || "Diyora"}</p></div>
-              <div className="space-y-2"><CalendarDays size={16} className="mx-auto text-[#9d7358]" /><p className="font-serif text-lg">{data.date || "2026-09-18"}</p><p className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-[.12em] text-[#806f62]"><MapPin size={10} /> {data.venue || "To‘yxona nomi"}</p></div>
+              <div className="space-y-2"><CalendarDays size={16} className="mx-auto text-[#9d7358]" /><p className="font-serif text-lg">{data.date ? data.date.split("-").reverse().join(".") : "18.09.2026"}</p><p className="flex items-center justify-center gap-1 text-[9px] uppercase tracking-[.12em] text-[#806f62]"><MapPin size={10} /> {data.venue || "To‘yxona nomi"}</p></div>
             </div>
           </div>
         </aside>
@@ -112,4 +120,8 @@ function FormSection({ title, subtitle, children }: { title: string; subtitle: s
 
 function Field({ label, value, onChange, placeholder, prefix, type = "text" }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; prefix?: string; type?: string }) {
   return <label className="block"><span className="mb-2 block text-sm font-medium">{label}</span><div className="flex rounded-xl border border-[#dcd8d1] bg-white focus-within:border-[#9a745a]">{prefix && <span className="border-r border-[#e2ded8] bg-[#f7f5f2] px-3 py-3 text-xs text-[#8e8880]">{prefix}</span>}<input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="min-w-0 flex-1 rounded-xl bg-transparent px-4 py-3 text-sm outline-none" /></div></label>;
+}
+
+function MessageField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+  return <label className="block"><span className="mb-2 block text-sm font-medium">{label}</span><textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3} className="w-full resize-none rounded-xl border border-[#dcd8d1] bg-white px-4 py-3 text-sm outline-none focus:border-[#9a745a]" /></label>;
 }

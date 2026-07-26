@@ -2,14 +2,20 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays, CheckCircle2, Clock3, Copy, Eye, MoreHorizontal, Plus, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Invitation } from "@/lib/demo-data";
+import { ModerationButton } from "@/components/moderation-button";
 
 export default async function Dashboard() {
   const supabase = await createClient();
-  const { data: rows } = await supabase.from("invitations").select("*, guests(count)");
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = user?.app_metadata?.role === "admin";
+  const { data: rows } = await supabase.from("invitations").select("*, guests(count)").order("created_at", { ascending: false });
   const invitations: Invitation[] = (rows ?? []).map((row) => ({
     id: row.id, slug: row.slug, partnerOne: row.partner_one, partnerTwo: row.partner_two,
     date: row.event_date, time: row.event_time.slice(0, 5), venue: row.venue,
-    address: row.address, mapUrl: row.map_url, message: row.message,
+    address: row.address, mapUrl: row.map_url,
+    messageUz: row.message_uz ?? row.message ?? "", messageRu: row.message_ru ?? "", messageEn: row.message_en ?? "",
+    defaultLanguage: row.default_language ?? "uz", createdByEmail: row.created_by_email,
+    deletedAt: row.deleted_at,
     status: row.status === "published" ? "published" : "draft",
     guests: row.guests?.[0]?.count ?? 0, attending: 0,
   }));
@@ -18,7 +24,7 @@ export default async function Dashboard() {
   return (
     <main className="px-5 pb-16 pt-6 sm:px-8 lg:px-12 lg:pt-10">
       <header className="mx-auto flex max-w-6xl items-center justify-between">
-        <div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#9b7a63]">Boshqaruv paneli</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taklifnomalar</h1></div>
+        <div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#9b7a63]">{isAdmin ? "Global administrator" : "Boshqaruv paneli"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taklifnomalar</h1></div>
         <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link>
       </header>
 
@@ -45,17 +51,18 @@ export default async function Dashboard() {
             <div className="px-6 py-16 text-center"><CalendarDays className="mx-auto text-[#b4aaa0]" /><h3 className="mt-4 font-serif text-2xl">Birinchi taklifnomangizni yarating</h3><p className="mt-2 text-sm text-[#89847e]">Ismlar, sana va manzilni kiritish bir necha daqiqa oladi.</p><Link href="/admin/invitations/new" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#252523] px-5 py-3 text-sm font-semibold text-white"><Plus size={16} /> Yaratish</Link></div>
           )}
           {invitations.map((item) => (
-            <div key={item.id} className="group grid gap-4 px-5 py-5 transition hover:bg-[#faf9f7] md:grid-cols-[1.5fr_1fr_.8fr_auto] md:items-center">
+            <div key={item.id} className={`group grid gap-4 px-5 py-5 transition hover:bg-[#faf9f7] md:grid-cols-[1.5fr_1fr_.8fr_auto] md:items-center ${item.deletedAt ? "bg-red-50/60 opacity-70" : ""}`}>
               <div className="flex items-center gap-4">
                 <div className="invitation-pattern grid size-14 shrink-0 place-items-center rounded-xl border border-[#e4d7cb] font-serif text-lg text-[#8b6047]">{item.partnerOne[0]}&{item.partnerTwo[0]}</div>
-                <div><Link href={`/admin/invitations/${item.slug}`} className="font-semibold hover:text-[#9b6c50]">{item.partnerOne} & {item.partnerTwo}</Link><p className="mt-1 flex items-center gap-1.5 text-xs text-[#89847e]"><Clock3 size={12} /> {item.date} · {item.time}</p></div>
+                <div><Link href={`/admin/invitations/${item.slug}`} className="font-semibold hover:text-[#9b6c50]">{item.partnerOne} & {item.partnerTwo}</Link><p className="mt-1 flex items-center gap-1.5 text-xs text-[#89847e]"><Clock3 size={12} /> {item.date.split("-").reverse().join(".")} · {item.time}</p>{isAdmin && <p className="mt-1 text-[10px] text-[#a29a92]">Creator: {item.createdByEmail || "old account / unknown"}</p>}</div>
               </div>
               <div><p className="text-xs text-[#89847e]">Mehmonlar</p><p className="mt-1 text-sm font-medium">{item.guests} taklif · {item.attending} ha</p></div>
-              <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === "published" ? "bg-[#e5f1e8] text-[#3e7450]" : "bg-[#f1ece5] text-[#876d59]"}`}>{item.status === "published" ? "Chop etilgan" : "Qoralama"}</span>
+              <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${item.deletedAt ? "bg-red-100 text-red-700" : item.status === "published" ? "bg-[#e5f1e8] text-[#3e7450]" : "bg-[#f1ece5] text-[#876d59]"}`}>{item.deletedAt ? "O‘chirilgan" : item.status === "published" ? "Chop etilgan" : "Qoralama"}</span>
               <div className="flex gap-2">
                 <Link href={`/i/${item.slug}`} aria-label="Ko‘rish" className="rounded-lg border border-[#e4e2dd] p-2 text-[#69645e]"><Eye size={16} /></Link>
                 <button aria-label="Nusxa olish" className="rounded-lg border border-[#e4e2dd] p-2 text-[#69645e]"><Copy size={16} /></button>
                 <Link href={`/admin/invitations/${item.slug}`} aria-label="Tahrirlash" className="rounded-lg bg-[#252523] p-2 text-white"><ArrowUpRight size={16} /></Link>
+                {isAdmin && <ModerationButton id={item.id} deleted={Boolean(item.deletedAt)} />}
               </div>
             </div>
           ))}

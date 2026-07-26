@@ -1,96 +1,34 @@
 "use client";
-
-import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, Clock3, Heart, MapPin, Navigation, X } from "lucide-react";
+import { useEffect,useMemo,useState } from "react";
+import { CalendarDays,Check,Clock3,Copy,Gift,Heart,MapPin,Music,Send } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { Invitation } from "@/lib/demo-data";
-
-type Language = "uz" | "ru" | "en";
-const copy = {
-  uz: { invite: "Sizni nikoh oqshomimizga taklif qilamiz", promise: "Birga bo‘lishga va’da berdik", details: "Tafsilotlarni ko‘rish", place: "Manzil va vaqt", map: "Xaritada ochish", route: "Yo‘nalish", calendar: "Taqvimga qo‘shish", until: "To‘yimizgacha", days: "kun", hours: "soat", minutes: "daqiqa", seconds: "soniya", reply: "Iltimos, javob bering", wait: "Sizni kutamizmi?", replyHelp: "Javobingizni belgilashingiz bizga tayyorgarlik ko‘rishda yordam beradi.", yes: "Ha, albatta boraman", no: "Afsuski, bora olmayman", welcome: "Ajoyib, sizni kutamiz!", thanks: "Javobingiz uchun rahmat", change: "Javobni o‘zgartirish", withLove: "Muhabbat bilan" },
-  ru: { invite: "Приглашаем вас на вечер нашей свадьбы", promise: "Мы обещали быть вместе", details: "Посмотреть детали", place: "Место и время", map: "Открыть на карте", route: "Маршрут", calendar: "Добавить в календарь", until: "До нашей свадьбы", days: "дней", hours: "часов", minutes: "минут", seconds: "секунд", reply: "Пожалуйста, ответьте", wait: "Ждать ли вас?", replyHelp: "Ваш ответ поможет нам лучше подготовиться к празднику.", yes: "Да, я обязательно приду", no: "К сожалению, не смогу", welcome: "Прекрасно, мы вас ждём!", thanks: "Спасибо за ваш ответ", change: "Изменить ответ", withLove: "С любовью" },
-  en: { invite: "We invite you to celebrate our wedding", promise: "We promised forever", details: "View the details", place: "Place and time", map: "Open in maps", route: "Directions", calendar: "Add to calendar", until: "Until our wedding", days: "days", hours: "hours", minutes: "minutes", seconds: "seconds", reply: "Please let us know", wait: "Will you join us?", replyHelp: "Your reply will help us prepare for the celebration.", yes: "Yes, I’ll be there", no: "Sadly, I can’t attend", welcome: "Wonderful, we’ll be waiting!", thanks: "Thank you for replying", change: "Change response", withLove: "With love" },
-} as const;
-
-function pad(value: number) { return String(value).padStart(2, "0"); }
-function googleDate(date: Date) { return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}00Z`; }
-
-export function InvitationView({ invitation }: { invitation: Invitation }) {
-  const [language, setLanguage] = useState<Language>(invitation.defaultLanguage);
-  const [rsvp, setRsvp] = useState<"yes" | "no" | null>(null);
-  const eventDate = useMemo(() => new Date(`${invitation.date}T${invitation.time}:00+05:00`), [invitation.date, invitation.time]);
-  const [remaining, setRemaining] = useState(() => Math.max(0, eventDate.getTime() - Date.now()));
-  useEffect(() => {
-    const timer = window.setInterval(() => setRemaining(Math.max(0, eventDate.getTime() - Date.now())), 1000);
-    return () => window.clearInterval(timer);
-  }, [eventDate]);
-
-  const locale = language === "uz" ? "uz-UZ" : language === "ru" ? "ru-RU" : "en-GB";
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "Asia/Tashkent" }).format(eventDate);
-  const formattedDate = invitation.date.split("-").reverse().join(".");
-  const messages = { uz: invitation.messageUz, ru: invitation.messageRu, en: invitation.messageEn };
-  const customMessage = messages[language] || messages[invitation.defaultLanguage] || invitation.messageUz || invitation.messageRu || invitation.messageEn;
-  const totalSeconds = Math.floor(remaining / 1000);
-  const countdown = { days: Math.floor(totalSeconds / 86400), hours: Math.floor((totalSeconds % 86400) / 3600), minutes: Math.floor((totalSeconds % 3600) / 60), seconds: totalSeconds % 60 };
-  const endDate = new Date(eventDate.getTime() + 4 * 60 * 60 * 1000);
-  const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${invitation.partnerOne} & ${invitation.partnerTwo}`)}&dates=${googleDate(eventDate)}/${googleDate(endDate)}&location=${encodeURIComponent(`${invitation.venue}, ${invitation.address}`)}&details=${encodeURIComponent(customMessage || "")}`;
-  const t = copy[language];
-
-  return (
-    <main className="grain relative min-h-screen overflow-hidden bg-[#f8f4ed] text-[#302820]">
-      <div className="fixed right-4 top-4 z-30 flex rounded-full border border-[#d9cbbd] bg-white/85 p-1 shadow-lg backdrop-blur">
-        {(["uz", "ru", "en"] as Language[]).map((item) => <button key={item} onClick={() => setLanguage(item)} className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase ${language === item ? "bg-[#302820] text-white" : "text-[#76685d]"}`}>{item}</button>)}
-      </div>
-      <section className="relative grid min-h-screen place-items-center px-5 py-14 text-center">
-        <div className="absolute left-[-7rem] top-[-7rem] size-80 rounded-full border border-[#b99b82]/20" />
-        <div className="absolute right-[-8rem] top-40 size-96 rounded-full border border-[#93a18b]/20" />
-        <div className="relative z-10 max-w-2xl">
-          <div className="mx-auto mb-10 flex size-12 items-center justify-center rounded-full border border-[#bb9e87]"><Heart size={18} className="text-[#9b6a4b]" /></div>
-          <p className="text-xs font-semibold uppercase tracking-[.28em] text-[#8e705b]">{t.invite}</p>
-          <h1 className="mt-10 font-serif text-[clamp(4rem,16vw,8.5rem)] leading-[.75] tracking-[-.06em]">{invitation.partnerOne}<span className="my-6 block text-4xl font-normal italic text-[#a4785e]">&</span>{invitation.partnerTwo}</h1>
-          {customMessage && <p className="mx-auto mt-12 max-w-lg font-serif text-xl italic leading-8 text-[#6e5f53]">“{customMessage}”</p>}
-          <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm">
-            <span className="flex items-center gap-2"><CalendarDays size={16} className="text-[#a4785e]" /> {weekday}, {formattedDate}</span>
-            <span className="flex items-center gap-2"><Clock3 size={16} className="text-[#a4785e]" /> {invitation.time}</span>
-          </div>
-          <a href="#details" className="mt-12 inline-block rounded-full border border-[#9b6a4b] px-7 py-3 text-xs font-bold uppercase tracking-[.16em] text-[#7d563f]">{t.details}</a>
-        </div>
-      </section>
-
-      <section className="border-y border-[#dfd3c7] bg-white/45 px-5 py-16 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[.28em] text-[#96735c]">{t.until}</p>
-        <div className="mx-auto mt-8 grid max-w-2xl grid-cols-4 gap-2">
-          {([["days", countdown.days], ["hours", countdown.hours], ["minutes", countdown.minutes], ["seconds", countdown.seconds]] as const).map(([key, value]) => (
-            <div key={key} className="rounded-2xl border border-[#e1d5c9] bg-white/65 px-2 py-5"><p className="font-serif text-3xl sm:text-5xl">{pad(value)}</p><p className="mt-2 text-[10px] uppercase tracking-wider text-[#85786d]">{t[key]}</p></div>
-          ))}
-        </div>
-      </section>
-
-      <section id="details" className="bg-[#2f332d] px-5 py-24 text-[#f7f2ea]">
-        <div className="mx-auto max-w-4xl text-center">
-          <p className="text-xs uppercase tracking-[.3em] text-[#b8c0b2]">{t.place}</p>
-          <h2 className="mt-6 font-serif text-4xl sm:text-6xl">{invitation.venue}</h2>
-          <p className="mx-auto mt-5 max-w-lg leading-7 text-white/60">{invitation.address}</p>
-          <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
-            <a href={calendarUrl} target="_blank" className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:bg-white/10"><CalendarDays className="mx-auto mb-4 text-[#c59a7d]" /><p className="font-serif text-lg capitalize">{weekday}</p><p className="mt-1 text-sm text-white/50">{formattedDate} · {invitation.time}</p><p className="mt-3 text-xs text-[#c59a7d]">{t.calendar}</p></a>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6"><Clock3 className="mx-auto mb-4 text-[#c59a7d]" /><p className="font-serif text-xl">{invitation.time}</p><p className="mt-1 text-sm text-white/50">{formattedDate}</p></div>
-            <a href={invitation.mapUrl} target="_blank" className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:bg-white/10"><MapPin className="mx-auto mb-4 text-[#c59a7d]" /><p className="font-serif text-xl">{t.map}</p><p className="mt-1 flex items-center justify-center gap-1 text-sm text-white/50">{t.route} <Navigation size={12} /></p></a>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-5 py-24 text-center">
-        <div className="mx-auto max-w-xl">
-          <p className="text-xs uppercase tracking-[.3em] text-[#9b745a]">{t.reply}</p>
-          <h2 className="mt-5 font-serif text-5xl">{t.wait}</h2>
-          <p className="mt-4 text-[#766a61]">{t.replyHelp}</p>
-          {rsvp ? <div className="mt-10 rounded-2xl border border-[#d8ccbf] bg-white/60 p-7"><div className="mx-auto grid size-11 place-items-center rounded-full bg-[#63765c] text-white">{rsvp === "yes" ? <Check /> : <X />}</div><p className="mt-4 font-serif text-2xl">{rsvp === "yes" ? t.welcome : t.thanks}</p><button onClick={() => setRsvp(null)} className="mt-3 text-xs underline">{t.change}</button></div>
-          : <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row"><button onClick={() => setRsvp("yes")} className="rounded-full bg-[#9b6a4b] px-8 py-4 font-semibold text-white">{t.yes}</button><button onClick={() => setRsvp("no")} className="rounded-full border border-[#bca895] px-8 py-4 font-semibold">{t.no}</button></div>}
-        </div>
-      </section>
-      <footer className="border-t border-[#ddd1c5] px-5 py-10 text-center text-xs text-[#91857b]">
-        <p>{t.withLove}, {invitation.partnerOne} & {invitation.partnerTwo} · Taklif.</p>
-        <p className="mt-3 text-[10px] text-[#aaa097]">Created by LoneDevs · <a className="underline" href="https://t.me/lonedevs" target="_blank">t.me/lonedevs</a></p>
-      </footer>
-    </main>
-  );
+type Lang="uz"|"ru"|"en";
+const c={
+uz:{invite:"Sizni nikoh oqshomimizga taklif qilamiz",details:"Tafsilotlar",place:"Manzil va vaqt",until:"To‘yimizgacha",days:"kun",hours:"soat",minutes:"daqiqa",seconds:"soniya",calendar:"Taqvimga qo‘shish",reply:"Iltimos, javob bering",wait:"Sizni kutamizmi?",help:"Ism va mehmonlar sonini yozing.",yes:"Ha, boraman",no:"Bora olmayman",name:"Ismingiz",count:"Mehmonlar soni",note:"Izoh (ixtiyoriy)",send:"Javobni yuborish",welcome:"Rahmat, javobingiz saqlandi!",gift:"To‘yona yuborish",contact:"Yaratuvchi bilan Telegram’da bog‘lanish",share:"Telegram’da ulash",with:"Muhabbat bilan"},
+ru:{invite:"Приглашаем вас на нашу свадьбу",details:"Подробнее",place:"Место и время",until:"До нашей свадьбы",days:"дней",hours:"часов",minutes:"минут",seconds:"секунд",calendar:"Добавить в календарь",reply:"Пожалуйста, ответьте",wait:"Вы будете с нами?",help:"Укажите имя и количество гостей.",yes:"Да, приду",no:"Не смогу прийти",name:"Ваше имя",count:"Количество гостей",note:"Комментарий (необязательно)",send:"Отправить ответ",welcome:"Спасибо, ваш ответ сохранён!",gift:"Отправить подарок",contact:"Связаться с создателем в Telegram",share:"Поделиться в Telegram",with:"С любовью"},
+en:{invite:"We invite you to celebrate our wedding",details:"View details",place:"Place and time",until:"Until our wedding",days:"days",hours:"hours",minutes:"minutes",seconds:"seconds",calendar:"Add to calendar",reply:"Please reply",wait:"Will you join us?",help:"Enter your name and party size.",yes:"Yes, I’ll attend",no:"I can’t attend",name:"Your name",count:"Number of guests",note:"Comment (optional)",send:"Send response",welcome:"Thank you, your response was saved!",gift:"Send a wedding gift",contact:"Contact the creator on Telegram",share:"Share on Telegram",with:"With love"}} as const;
+const pad=(n:number)=>String(n).padStart(2,"0");
+const googleDate=(d:Date)=>`${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+export function InvitationView({invitation}:{invitation:Invitation}){
+ const [lang,setLang]=useState<Lang>(invitation.defaultLanguage);const [choice,setChoice]=useState<"yes"|"no"|null>(null);const [done,setDone]=useState(false);const [name,setName]=useState("");const [count,setCount]=useState("1");const [note,setNote]=useState("");const [error,setError]=useState("");const [busy,setBusy]=useState(false);const [playing,setPlaying]=useState(false);
+ const event=useMemo(()=>new Date(`${invitation.date}T${invitation.time}:00+05:00`),[invitation.date,invitation.time]);const [remaining,setRemaining]=useState(()=>Math.max(0,event.getTime()-Date.now()));useEffect(()=>{const id=setInterval(()=>setRemaining(Math.max(0,event.getTime()-Date.now())),1000);return()=>clearInterval(id)},[event]);
+ const t=c[lang],locale=lang==="uz"?"uz-UZ":lang==="ru"?"ru-RU":"en-GB",weekday=new Intl.DateTimeFormat(locale,{weekday:"long",timeZone:"Asia/Tashkent"}).format(event),date=invitation.date.split("-").reverse().join(".");
+ const messages={uz:invitation.messageUz,ru:invitation.messageRu,en:invitation.messageEn};const message=messages[lang]||messages[invitation.defaultLanguage]||invitation.messageUz||invitation.messageRu||invitation.messageEn;
+ const sec=Math.floor(remaining/1000),timer={days:Math.floor(sec/86400),hours:Math.floor(sec%86400/3600),minutes:Math.floor(sec%3600/60),seconds:sec%60};const end=new Date(event.getTime()+14400000);const cal=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${invitation.partnerOne} & ${invitation.partnerTwo}`)}&dates=${googleDate(event)}/${googleDate(end)}&location=${encodeURIComponent(`${invitation.venue}, ${invitation.address}`)}`;
+ const query=encodeURIComponent(`${invitation.venue}, ${invitation.address}`);const current=typeof window==="undefined"?"":location.href;const share=`https://t.me/share/url?url=${encodeURIComponent(current)}&text=${encodeURIComponent(`${invitation.partnerOne} & ${invitation.partnerTwo} — ${date}`)}`;
+ async function submit(){if(name.trim().length<2){setError(t.name);return}setBusy(true);const {error:e}=await createClient().rpc("submit_rsvp",{target_invitation:invitation.id,guest_name:name.trim(),response_status:choice==="yes"?"attending":"declined",guest_count:choice==="yes"?Number(count):1,guest_note:note.trim()||null});setBusy(false);if(e)setError(e.message);else setDone(true)}
+ return <main className={`grain min-h-screen overflow-hidden ${invitation.themeStyle==="midnight"?"bg-[#171815] text-[#f8f4ed]":"bg-[#f8f4ed] text-[#302820]"}`}>
+ <div className="fixed right-4 top-4 z-30 flex rounded-full border bg-white/90 p-1 text-[#302820]">{(["uz","ru","en"] as Lang[]).map(x=><button key={x} onClick={()=>setLang(x)} className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase ${lang===x?"bg-[#302820] text-white":""}`}>{x}</button>)}</div>
+ <section className="grid min-h-screen place-items-center px-5 py-14 text-center"><div className="max-w-2xl"><Heart className="mx-auto text-[#9b6a4b]"/><p className="mt-10 text-xs font-semibold uppercase tracking-[.28em] text-[#8e705b]">{t.invite}</p><h1 className="mt-10 font-serif text-[clamp(4rem,16vw,8.5rem)] leading-[.75]">{invitation.partnerOne}<span className="my-6 block text-4xl italic text-[#a4785e]">&</span>{invitation.partnerTwo}</h1>{message&&<p className="mx-auto mt-12 max-w-lg font-serif text-xl italic leading-8">“{message}”</p>}<p className="mt-12">{weekday}, {date} · {invitation.time}</p><a href="#details" className="mt-10 inline-block rounded-full border px-7 py-3">{t.details}</a></div></section>
+ <section className="border-y px-5 py-16 text-center"><p className="text-xs uppercase tracking-[.28em]">{t.until}</p><div className="mx-auto mt-8 grid max-w-2xl grid-cols-4 gap-2">{Object.entries(timer).map(([k,v])=><div key={k} className="rounded-2xl border bg-white/10 px-2 py-5"><p className="font-serif text-3xl sm:text-5xl">{pad(v)}</p><p className="mt-2 text-[10px] uppercase">{t[k as keyof typeof timer]}</p></div>)}</div></section>
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ {invitation.coverUrl&&<section className="mx-auto max-w-5xl px-5 py-16"><img src={invitation.coverUrl} alt={`${invitation.partnerOne} & ${invitation.partnerTwo}`} loading="lazy" className="max-h-[75vh] w-full rounded-[2rem] object-cover"/></section>}
+ {/* eslint-disable-next-line @next/next/no-img-element */}
+ {invitation.galleryUrls&&invitation.galleryUrls.length>1&&<section className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-5 pb-16 sm:grid-cols-3">{invitation.galleryUrls.slice(1).map((url)=><img key={url} src={url} alt="" loading="lazy" className="aspect-square w-full rounded-2xl object-cover"/>)}</section>}
+ <section id="details" className="bg-[#2f332d] px-5 py-24 text-center text-white"><p className="text-xs uppercase tracking-[.3em]">{t.place}</p><h2 className="mt-6 font-serif text-5xl">{invitation.venue}</h2><p className="mt-4 text-white/60">{invitation.address}</p><div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3"><a href={cal} target="_blank" className="rounded-2xl border border-white/10 p-6"><CalendarDays className="mx-auto"/><p className="mt-3">{t.calendar}</p></a><div className="rounded-2xl border border-white/10 p-6"><Clock3 className="mx-auto"/><p className="mt-3">{date} · {invitation.time}</p></div><div className="rounded-2xl border border-white/10 p-6"><MapPin className="mx-auto"/><div className="mt-4 flex justify-center gap-3 text-xs text-[#c59a7d]"><a target="_blank" href={invitation.mapUrl||`https://google.com/maps/search/?api=1&query=${query}`}>Google</a><a target="_blank" href={`https://yandex.com/maps/?text=${query}`}>Yandex</a><a target="_blank" href={`https://2gis.uz/search/${query}`}>2GIS</a></div></div></div></section>
+ {(invitation.musicUrl||invitation.cardNumber)&&<section className="mx-auto grid max-w-xl gap-4 px-5 py-16">{invitation.musicUrl&&<button onClick={()=>{const a=document.querySelector<HTMLAudioElement>("#music");if(!a)return;if(playing){a.pause()}else{void a.play()}setPlaying(!playing)}} className="rounded-full border px-6 py-3"><Music className="mr-2 inline" size={16}/>{playing?"Pause":"Play music"}<audio id="music" src={invitation.musicUrl}/></button>}{invitation.cardNumber&&<div className="rounded-2xl border bg-white/10 p-6 text-center"><Gift className="mx-auto"/><h3 className="mt-3 font-serif text-2xl">{t.gift}</h3><button onClick={()=>navigator.clipboard.writeText(invitation.cardNumber!)} className="mt-3 font-mono text-lg"><Copy className="mr-2 inline" size={15}/>{invitation.cardNumber}</button><p className="mt-1 text-xs">{invitation.cardHolder}</p></div>}</section>}
+ <section className="px-5 py-24 text-center"><div className="mx-auto max-w-xl"><p className="text-xs uppercase tracking-[.3em]">{t.reply}</p><h2 className="mt-5 font-serif text-5xl">{t.wait}</h2><p className="mt-4">{t.help}</p>{done?<div className="mt-10 rounded-2xl border p-7"><Check className="mx-auto"/><p className="mt-4 font-serif text-2xl">{t.welcome}</p></div>:<div className="mt-10 space-y-3"><div className="grid grid-cols-2 gap-3"><button onClick={()=>setChoice("yes")} className={`rounded-full px-5 py-4 ${choice==="yes"?"bg-[#9b6a4b] text-white":"border"}`}>{t.yes}</button><button onClick={()=>setChoice("no")} className={`rounded-full px-5 py-4 ${choice==="no"?"bg-[#302820] text-white":"border"}`}>{t.no}</button></div>{choice&&<><input maxLength={100} value={name} onChange={e=>setName(e.target.value)} placeholder={t.name} className="w-full rounded-xl border bg-white px-4 py-3 text-[#302820]"/>{choice==="yes"&&<select value={count} onChange={e=>setCount(e.target.value)} className="w-full rounded-xl border bg-white px-4 py-3 text-[#302820]">{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n} value={n}>{t.count}: {n}</option>)}</select>}<textarea maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder={t.note} className="w-full rounded-xl border bg-white px-4 py-3 text-[#302820]"/>{error&&<p className="text-sm text-red-600">{error}</p>}<button disabled={busy} onClick={submit} className="w-full rounded-full bg-[#9b6a4b] px-8 py-4 text-white">{busy?"…":t.send}</button></>}</div>}</div></section>
+ <footer className="border-t px-5 py-10 text-center text-xs"><p>{t.with}, {invitation.partnerOne} & {invitation.partnerTwo} · Taklif.</p><div className="mt-5 flex flex-wrap justify-center gap-3"><a href={share} target="_blank" className="rounded-full border px-4 py-2"><Send className="mr-2 inline" size={13}/>{t.share}</a><a href="https://t.me/lonedevs" target="_blank" className="rounded-full border px-4 py-2">{t.contact}</a></div></footer>
+ </main>
 }

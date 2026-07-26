@@ -8,5 +8,6 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
   }
-  return NextResponse.redirect(new URL("/admin", url.origin));
+  const next = url.searchParams.get("next");
+  return NextResponse.redirect(new URL(next?.startsWith("/") ? next : "/admin", url.origin));
 }

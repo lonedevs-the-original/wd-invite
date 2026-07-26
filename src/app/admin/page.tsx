@@ -8,7 +8,8 @@ export default async function Dashboard() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAdmin = user?.app_metadata?.role === "admin";
-  const { data: rows } = await supabase.from("invitations").select("*, guests(count)").order("created_at", { ascending: false });
+  const { data: rows } = await supabase.from("invitations").select("*, guests(*)").order("created_at", { ascending: false });
+  const guestRows = (rows ?? []).flatMap((row) => (row.guests ?? []).map((guest: { id: string; name: string; rsvp_status: string; party_size: number; attending_count: number | null; note: string | null }) => ({ ...guest, invitation: `${row.partner_one} & ${row.partner_two}` })));
   const invitations: Invitation[] = (rows ?? []).map((row) => ({
     id: row.id, slug: row.slug, partnerOne: row.partner_one, partnerTwo: row.partner_two,
     date: row.event_date, time: row.event_time.slice(0, 5), venue: row.venue,
@@ -17,7 +18,8 @@ export default async function Dashboard() {
     defaultLanguage: row.default_language ?? "uz", createdByEmail: row.created_by_email,
     deletedAt: row.deleted_at,
     status: row.status === "published" ? "published" : "draft",
-    guests: row.guests?.[0]?.count ?? 0, attending: 0,
+    guests: row.guests?.reduce((sum: number, guest: { party_size: number }) => sum + guest.party_size, 0) ?? 0,
+    attending: row.guests?.filter((guest: { rsvp_status: string }) => guest.rsvp_status === "attending").reduce((sum: number, guest: { attending_count: number | null }) => sum + (guest.attending_count ?? 0), 0) ?? 0,
   }));
   const totalGuests = invitations.reduce((sum, item) => sum + item.guests, 0);
   const attending = invitations.reduce((sum, item) => sum + item.attending, 0);
@@ -25,7 +27,7 @@ export default async function Dashboard() {
     <main className="px-5 pb-16 pt-6 sm:px-8 lg:px-12 lg:pt-10">
       <header className="mx-auto flex max-w-6xl items-center justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#9b7a63]">{isAdmin ? "Global administrator" : "Boshqaruv paneli"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taklifnomalar</h1></div>
-        <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link>
+        {(isAdmin || invitations.filter((item) => !item.deletedAt).length === 0) ? <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link> : <span className="max-w-xs text-right text-xs text-[#89847e]">Har bir hisob uchun bittadan faol taklifnoma. Eskisi to‘y sanasidan 14 kun o‘tib o‘chiriladi.</span>}
       </header>
 
       <section className="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-3">
@@ -39,6 +41,10 @@ export default async function Dashboard() {
             <p className="mt-5 text-3xl font-semibold">{value}</p><p className="mt-1 text-xs text-[#96918b]">{note}</p>
           </div>
         ))}
+      </section>
+      <section className="mx-auto mt-8 max-w-6xl overflow-hidden rounded-2xl border border-[#e4e2dd] bg-white">
+        <div className="border-b px-5 py-4"><h2 className="font-semibold">Mehmonlar javoblari</h2><p className="mt-1 text-xs text-[#89847e]">Ism, qatnashish holati, mehmonlar soni va izoh.</p></div>
+        {guestRows.length === 0 ? <p className="px-5 py-10 text-center text-sm text-[#89847e]">Hali javoblar yo‘q.</p> : <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-[#faf9f7] text-xs text-[#77736e]"><tr><th className="px-5 py-3">Ism</th><th>Taklifnoma</th><th>Holat</th><th>Soni</th><th>Izoh</th></tr></thead><tbody>{guestRows.map((guest) => <tr key={guest.id} className="border-t"><td className="px-5 py-3 font-medium">{guest.name}</td><td>{guest.invitation}</td><td>{guest.rsvp_status === "attending" ? "Boradi" : "Bormaydi"}</td><td>{guest.party_size}</td><td className="max-w-xs truncate">{guest.note || "—"}</td></tr>)}</tbody></table></div>}
       </section>
 
       <section className="mx-auto mt-8 max-w-6xl overflow-hidden rounded-2xl border border-[#e4e2dd] bg-white">

@@ -8,6 +8,12 @@ export type Invitation = {
   venue: string;
   address: string;
   mapUrl: string;
+  cardNumber?: string;
+  cardHolder?: string;
+  themeStyle?: "classic" | "garden" | "midnight";
+  coverUrl?: string;
+  galleryUrls?: string[];
+  musicUrl?: string;
   messageUz: string;
   messageRu: string;
   messageEn: string;

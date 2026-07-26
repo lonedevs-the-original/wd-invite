@@ -27,7 +27,7 @@ export default async function Dashboard() {
     <main className="px-5 pb-16 pt-6 sm:px-8 lg:px-12 lg:pt-10">
       <header className="mx-auto flex max-w-6xl items-center justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#9b7a63]">{isAdmin ? "Global administrator" : "Boshqaruv paneli"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taklifnomalar</h1></div>
-        <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link>
+        {(isAdmin || invitations.filter((item) => !item.deletedAt).length === 0) ? <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link> : <span className="max-w-xs text-right text-xs text-[#89847e]">Oddiy hisob uchun bittadan faol taklifnoma. LoneDevs superadmin hisobida cheklov yo‘q.</span>}
       </header>
 
       <section className="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-3">

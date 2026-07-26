@@ -19,7 +19,11 @@ export default function LoginPage() {
     const supabase = createClient();
     const result = mode === "login"
       ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
+      : await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
     setBusy(false);
     if (result.error) return setMessage(result.error.message);
     if (mode === "signup" && !result.data.session) return setMessage("Tasdiqlash havolasi emailingizga yuborildi.");

@@ -29,7 +29,7 @@ export default async function Dashboard() {
     <main className="px-5 pb-16 pt-6 sm:px-8 lg:px-12 lg:pt-10">
       <header className="mx-auto flex max-w-6xl items-center justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#9b7a63]">{isAdmin ? "Global administrator" : "Boshqaruv paneli"}</p><h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Taklifnomalar</h1></div>
-        {(isAdmin || invitations.filter((item) => !item.deletedAt).length === 0) ? <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link> : <span className="max-w-xs text-right text-xs text-[#89847e]">Oddiy hisob uchun bittadan faol taklifnoma. LoneDevs superadmin hisobida cheklov yo‘q.</span>}
+        {(isAdmin || invitations.filter((item) => !item.deletedAt).length === 0) ? <Link href="/admin/invitations/new" className="flex items-center gap-2 rounded-xl bg-[#252523] px-4 py-3 text-sm font-semibold text-white shadow-lg"><Plus size={17} /> <span className="hidden sm:inline">Yangi taklifnoma</span></Link> : <span className="max-w-xs text-right text-xs text-[#89847e]">Oddiy hisob uchun bittadan faol taklifnoma. Superadmin hisobida cheklov yo‘q.</span>}
       </header>
 
       <section className="mx-auto mt-10 grid max-w-6xl gap-4 sm:grid-cols-3">
@@ -62,7 +62,7 @@ export default async function Dashboard() {
             <div key={item.id} className={`group grid gap-4 px-5 py-5 transition hover:bg-[#faf9f7] md:grid-cols-[1.5fr_1fr_.8fr_auto] md:items-center ${item.deletedAt ? "bg-red-50/60 opacity-70" : ""}`}>
               <div className="flex items-center gap-4">
                 <div className="invitation-pattern grid size-14 shrink-0 place-items-center rounded-xl border border-[#e4d7cb] font-serif text-lg text-[#8b6047]">{item.partnerOne[0]}&{item.partnerTwo[0]}</div>
-                <div><Link href={`/admin/invitations/${item.slug}`} className="font-semibold hover:text-[#9b6c50]">{item.partnerOne} & {item.partnerTwo}</Link><p className="mt-1 flex items-center gap-1.5 text-xs text-[#89847e]"><Clock3 size={12} /> {item.date.split("-").reverse().join(".")} · {item.time}</p>{isAdmin && <p className="mt-1 text-[10px] text-[#a29a92]">Creator: {item.createdByEmail || "old account / unknown"}</p>}</div>
+                <div><Link href={`/admin/invitations/${item.slug}`} className="font-semibold hover:text-[#9b6c50]">{item.partnerOne} & {item.partnerTwo}</Link><p className="mt-1 flex items-center gap-1.5 text-xs text-[#89847e]"><Clock3 size={12} /> {item.date.split("-").reverse().join(".")} · {item.time}</p>{isAdmin && <p className="mt-1 text-[10px] text-[#a29a92]">Yaratuvchi: {item.createdByEmail || "eski hisob / noma’lum"}</p>}</div>
               </div>
               <div><p className="text-xs text-[#89847e]">Mehmonlar</p><p className="mt-1 text-sm font-medium">{item.guests} taklif · {item.attending} ha</p></div>
               <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${item.deletedAt ? "bg-red-100 text-red-700" : item.status === "published" ? "bg-[#e5f1e8] text-[#3e7450]" : "bg-[#f1ece5] text-[#876d59]"}`}>{item.deletedAt ? "O‘chirilgan" : item.status === "published" ? "Chop etilgan" : "Qoralama"}</span>
@@ -76,7 +76,7 @@ export default async function Dashboard() {
           ))}
         </div>
       </section>
-      <section className="mx-auto mt-8 max-w-6xl rounded-2xl border bg-white p-5"><h2 className="font-semibold">LoneDevs</h2><p className="mb-4 mt-1 text-xs text-[#89847e]">Savol yuboring yoki loyihani ixtiyoriy qo‘llab-quvvatlang.</p><CreatorActions compact/></section>
+      <section className="mx-auto mt-8 max-w-6xl rounded-2xl border bg-white p-5"><CreatorActions compact/></section>
     </main>
   );
 }

@@ -9,9 +9,9 @@ import { CopyLinkButton } from "@/components/copy-link-button";
 export default async function Dashboard() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const isAdmin = user?.app_metadata?.role === "admin";
-  const { data: rows } = await supabase.from("invitations").select("*, guests(*)").order("created_at", { ascending: false });
-  const guestRows = (rows ?? []).flatMap((row) => (row.guests ?? []).map((guest: { id: string; name: string; rsvp_status: string; party_size: number; attending_count: number | null; note: string | null }) => ({ ...guest, invitation: `${row.partner_one} & ${row.partner_two}` })));
+  const isAdmin = user?.app_metadata?.toy_role === "admin";
+  const { data: rows } = await supabase.from("toy_invitations").select("*, toy_guests(*)").order("created_at", { ascending: false });
+  const guestRows = (rows ?? []).flatMap((row) => (row.toy_guests ?? []).map((guest: { id: string; name: string; rsvp_status: string; party_size: number; attending_count: number | null; note: string | null }) => ({ ...guest, invitation: `${row.partner_one} & ${row.partner_two}` })));
   const invitations: Invitation[] = (rows ?? []).map((row) => ({
     id: row.id, slug: row.slug, partnerOne: row.partner_one, partnerTwo: row.partner_two,
     date: row.event_date, time: row.event_time.slice(0, 5), venue: row.venue,
@@ -20,8 +20,8 @@ export default async function Dashboard() {
     defaultLanguage: row.default_language ?? "uz", createdByEmail: row.created_by_email,
     deletedAt: row.deleted_at,
     status: row.status === "published" ? "published" : "draft",
-    guests: row.guests?.reduce((sum: number, guest: { party_size: number }) => sum + guest.party_size, 0) ?? 0,
-    attending: row.guests?.filter((guest: { rsvp_status: string }) => guest.rsvp_status === "attending").reduce((sum: number, guest: { attending_count: number | null }) => sum + (guest.attending_count ?? 0), 0) ?? 0,
+    guests: row.toy_guests?.reduce((sum: number, guest: { party_size: number }) => sum + guest.party_size, 0) ?? 0,
+    attending: row.toy_guests?.filter((guest: { rsvp_status: string }) => guest.rsvp_status === "attending").reduce((sum: number, guest: { attending_count: number | null }) => sum + (guest.attending_count ?? 0), 0) ?? 0,
   }));
   const totalGuests = invitations.reduce((sum, item) => sum + item.guests, 0);
   const attending = invitations.reduce((sum, item) => sum + item.attending, 0);

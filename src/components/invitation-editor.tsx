@@ -25,7 +25,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
   async function uploadImages(files: FileList | null) {
     if(!files?.length)return;setUploading(true);setError("");const supabase=createClient();const {data:{user}}=await supabase.auth.getUser();if(!user){router.push("/login");return}
     const urls:string[]=[];
-    for(const file of Array.from(files).slice(0,6)){const bitmap=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d")?.drawImage(bitmap,0,0,canvas.width,canvas.height);const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",.82));if(!blob)continue;const path=`${user.id}/${crypto.randomUUID()}.webp`;const {error:uploadError}=await supabase.storage.from("wedding-media").upload(path,blob,{contentType:"image/webp"});if(uploadError){setError(uploadError.message);continue}urls.push(supabase.storage.from("wedding-media").getPublicUrl(path).data.publicUrl)}
+    for(const file of Array.from(files).slice(0,6)){const bitmap=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d")?.drawImage(bitmap,0,0,canvas.width,canvas.height);const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",.82));if(!blob)continue;const path=`${user.id}/${crypto.randomUUID()}.webp`;const {error:uploadError}=await supabase.storage.from("toy-wedding-media").upload(path,blob,{contentType:"image/webp"});if(uploadError){setError(uploadError.message);continue}urls.push(supabase.storage.from("toy-wedding-media").getPublicUrl(path).data.publicUrl)}
     setUploading(false);if(urls.length){set("coverUrl",urls[0]);set("galleryUrls",[...urls,...(data.galleryUrls??[])].slice(0,6))}
   }
   const save = async () => {
@@ -33,7 +33,7 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
-    if (!initial) await supabase.rpc("cleanup_expired_invitations");
+    if (!initial) await supabase.rpc("toy_cleanup_expired_invitations");
     const payload = {
       owner_id: user.id, slug: data.slug, partner_one: data.partnerOne, partner_two: data.partnerTwo,
       event_date: data.date, event_time: data.time, venue: data.venue, address: data.address,
@@ -45,8 +45,8 @@ export function InvitationEditor({ initial }: { initial?: Invitation }) {
       gallery_urls: data.galleryUrls ?? [], music_url: data.musicUrl?.trim() || null,
     };
     const result = initial
-      ? await supabase.from("invitations").update(payload).eq("id", initial.id)
-      : await supabase.from("invitations").insert(payload).select("slug").single();
+      ? await supabase.from("toy_invitations").update(payload).eq("id", initial.id)
+      : await supabase.from("toy_invitations").insert(payload).select("slug").single();
     setBusy(false);
     if (result.error) return setError(result.error.message);
     setSaved(true);

@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase=await createClient();
   const {data:{user}}=await supabase.auth.getUser();
-  const isAdmin=user?.app_metadata?.role==="admin";
+  if(user) await supabase.from("toy_profiles").upsert({id:user.id,full_name:user.user_metadata?.full_name??null},{onConflict:"id",ignoreDuplicates:true});
+  const isAdmin=user?.app_metadata?.toy_role==="admin";
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-[#252523]">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-[#e4e2dd] bg-white p-5 lg:flex">
